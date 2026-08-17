@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lacuna — estude com ciência</title>
+<style>
+  :root{
+    --ink:#171310;
+    --card-face:#f3ead9;
+    --rule:#3a332b;
+    --rule-light:#4d443a;
+    --clay:#c1652f;
+    --clay-dim:#5c3a24;
+    --paper-dim:#9c9082;
+    --ok:#7c9a6e;
+    --ok-dim:#3a4632;
+    --bad:#b25a4a;
+    --bad-dim:#4a2c25;
+    --hard:#c9a24a;
+    --hard-dim:#4a3d20;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+      var(--ink);
+    color:var(--card-face);
+    font-family:"Iowan Old Style","Georgia",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:36px 20px 60px;}
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--rule); padding-bottom:14px; margin-bottom:32px;
+  }
+  .brand{font-size:15px; letter-spacing:0.14em; text-transform:uppercase; font-weight:600;}
+  .brand span{color:var(--clay);}
+  .tagline{font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim);}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  .panel{border:1px solid var(--rule); padding:20px; border-radius:2px; margin-bottom:20px; background:#1c1712;}
+  .field-label{
+    font-family:"SF Mono","Menlo",monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:0.1em; color:var(--paper-dim); margin-bottom:10px;
+  }
+  .dropzone{
+    border:1px dashed var(--rule-light); border-radius:2px; padding:26px 16px;
+    text-align:center; background:#171310; transition:border-color .15s, background .15s;
+  }
+  .dropzone.drag{border-color:var(--clay); background:#241a10;}
+  .dz-text{font-family:"SF Mono","Menlo",monospace; font-size:12px; color:var(--paper-dim);}
+  .dz-link{color:var(--clay); text-decoration:underline; cursor:pointer;}
+  .dz-status{margin-top:10px; font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim); min-height:14px;}
+  .dz-status.err{color:var(--bad);}
+  .dz-status.ok{color:var(--clay);}
+  .or-divider{
+    text-align:center; font-family:"SF Mono","Menlo",monospace; font-size:10px; color:var(--paper-dim);
+    margin:14px 0; text-transform:uppercase; letter-spacing:0.1em;
+  }
+  .drive-row{display:flex; flex-direction:column; gap:8px; margin-bottom:10px;}
+  .remember-row{
+    display:flex; align-items:center; gap:6px; font-family:"SF Mono","Menlo",monospace;
+    font-size:11px; color:var(--paper-dim); margin-bottom:4px;
+  }
+  .due-note{
+    font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim);
+    text-align:center; padding:16px 0; line-height:1.7;
+  }
+  textarea, input[type=text]{
+    width:100%; background:#171310; border:1px solid var(--rule-light);
+    color:var(--card-face); font-family:"SF Mono","Menlo",monospace; font-size:13px; line-height:1.6;
+    padding:12px; border-radius:2px;
+  }
+  textarea{min-height:100px; resize:vertical;}
+  input[type=text]:focus, textarea:focus{outline:none; border-color:var(--clay);}
+  .btn{font-family:"SF Mono","Menlo",monospace; cursor:pointer; border:none; border-radius:2px;}
+  .btn-primary{
+    background:var(--clay); color:#1c1006; font-size:13px; font-weight:700;
+    letter-spacing:0.05em; text-transform:uppercase; padding:13px 26px; margin-top:14px; width:100%;
+  }
+  .btn-primary:hover{background:#d5763c;}
+  .btn-primary:disabled{background:var(--rule-light); color:var(--paper-dim); cursor:not-allowed;}
+  .btn-ghost{
+    background:transparent; color:var(--paper-dim); border:1px solid var(--rule);
+    font-size:12px; padding:12px 16px;
+  }
+  .btn-ghost:hover{color:var(--card-face); border-color:var(--rule-light);}
+
+  .howto{
+    font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim); line-height:1.8;
+    border-left:2px solid var(--clay-dim); padding:2px 0 2px 14px; margin-bottom:24px;
+  }
+  .howto b{color:var(--clay);}
+
+  .method-note{
+    font-family:"SF Mono","Menlo",monospace; font-size:10.5px; color:var(--paper-dim); line-height:1.7;
+    background:#1c1712; border:1px solid var(--rule); border-radius:2px; padding:14px 16px; margin-bottom:20px;
+  }
+  .method-note b{color:var(--clay);}
+
+  .mode-grid{display:flex; flex-direction:column; gap:12px;}
+  .mode-card{
+    border:1px solid var(--rule); background:#1c1712; padding:18px 20px; border-radius:2px;
+    cursor:pointer; text-align:left; transition:border-color .15s, background .15s;
+  }
+  .mode-card:hover{border-color:var(--clay);}
+  .mode-name{font-size:17px; font-weight:600; margin-bottom:4px;}
+  .mode-name span{color:var(--clay);}
+  .mode-desc{font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim); line-height:1.5;}
+  .deck-summary{
+    font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim); margin-bottom:18px;
+  }
+
+  .deck-meta{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;
+    font-family:"SF Mono","Menlo",monospace; font-size:11px; color:var(--paper-dim); letter-spacing:0.03em;
+  }
+  .score{color:var(--clay);}
+  .mastery-rail{width:100%; height:3px; background:var(--rule); margin-bottom:20px; position:relative;}
+  .mastery-fill{position:absolute; left:0; top:0; height:100%; background:var(--ok); width:0%; transition:width .2s;}
+
+  .stage{position:relative; margin-bottom:20px; min-height:150px;}
+  .stack-behind{position:absolute; inset:0; border-radius:6px; background:#e5dcc7; box-shadow:0 10px 24px rgba(0,0,0,0.45);}
+  .stack-behind.b1{transform:translate(6px,8px) rotate(1deg); background:#ded4bc; z-index:1;}
+  .stack-behind.b2{transform:translate(-5px,13px) rotate(-0.8deg); background:#d6cbaf; z-index:0;}
+
+  .flip-outer{position:relative; z-index:2; min-height:200px; perspective:1400px;}
+  .card3d{
+    position:absolute; inset:0; cursor:pointer; transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.9,.25,1);
+  }
+  .card3d.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:6px;
+    background:var(--card-face); color:#241d13; box-shadow:0 14px 30px rgba(0,0,0,0.55);
+    display:flex; flex-direction:column; padding:26px 26px 20px;
+    background-image: repeating-linear-gradient(180deg, transparent 0px, transparent 27px, rgba(90,70,40,0.09) 28px);
+  }
+  .face-back{transform:rotateY(180deg);}
+
+  .card-flat{
+    position:relative; z-index:2; border-radius:6px; background:var(--card-face); color:#241d13;
+    box-shadow:0 14px 30px rgba(0,0,0,0.55); padding:26px 26px 22px; min-height:150px;
+    background-image: repeating-linear-gradient(180deg, transparent 0px, transparent 27px, rgba(90,70,40,0.09) 28px);
+    display:flex; flex-direction:column;
+  }
+
+  .hole-row{position:absolute; top:12px; left:0; right:0; display:flex; justify-content:space-between; padding:0 20px;}
+  .hole{width:10px; height:10px; border-radius:50%; background:var(--ink); box-shadow:inset 0 1px 2px rgba(0,0,0,0.6);}
+  .face-tag{
+    font-family:"SF Mono","Menlo",monospace; font-size:9px; text-transform:uppercase;
+    letter-spacing:0.12em; color:var(--clay-dim); margin-bottom:14px; margin-top:14px;
+  }
+  .leech-flag{color:var(--bad); float:right; font-size:9px;}
+  .face-text{font-size:19px; line-height:1.55; font-weight:500; flex:1; display:flex; align-items:center;}
+  .blank{display:inline-block; border-bottom:2px solid var(--clay); min-width:64px; height:1em;}
+  .answer-word{color:var(--clay); font-weight:700;}
+  .tap-hint{font-family:"SF Mono","Menlo",monospace; font-size:10px; color:#a89a7c; text-align:center; margin-top:auto;}
+
+  .recall-input-row{display:flex; gap:8px; margin-bottom:14px;}
+  .recall-input-row input{flex:1;}
+  .feedback-line{
+    font-family:"SF Mono","Menlo",monospace; font-size:12px; margin-bottom:14px; text-align:center; min-height:16px;
+  }
+  .feedback-line.ok{color:var(--ok);}
+  .feedback-line.bad{color:var(--bad);}
+
+  .options-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;}
+  .option-btn{
+    background:#211a12; border:1px solid var(--rule-light); color:var(--card-face);
+    font-family:"Iowan Old Style","Georgia",serif; font-size:15px;
+    padding:14px 12px; border-radius:2px; text-align:left; cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .option-btn:hover:not(:disabled){border-color:var(--clay);}
+  .option-btn:disabled{cursor:default;}
+  .option-btn.correct{background:var(--ok-dim); border-color:var(--ok); color:#d9e8d1;}
+  .option-btn.wrong{background:var(--bad-dim); border-color:var(--bad); color:#f0d6d0;}
+
+  .rate-row{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;}
+  .rate-btn{padding:13px 4px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; border-radius:2px;}
+  .rate-again{background:transparent; border:1px solid var(--bad); color:var(--bad);}
+  .rate-again:hover{background:rgba(178,90,74,0.12);}
+  .rate-hard{background:transparent; border:1px solid var(--hard); color:var(--hard);}
+  .rate-hard:hover{background:rgba(201,162,74,0.12);}
+  .rate-good{background:transparent; border:1px solid var(--ok); color:var(--ok);}
+  .rate-good:hover{background:rgba(124,154,110,0.12);}
+  .rate-easy{background:var(--ok-dim); border:1px solid var(--ok); color:#d9e8d1;}
+  .rate-easy:hover{background:#465a3c;}
+
+  .reveal-row{display:flex; justify-content:center; margin-bottom:14px;}
+  .next-row{display:flex; justify-content:center; margin-bottom:14px;}
+  .nav-row{display:flex; gap:10px; justify-content:center;}
+
+  .result-panel{text-align:center; padding:10px 0;}
+  .result-panel .big{font-size:44px; font-weight:700; color:var(--clay); margin-bottom:6px;}
+  .result-panel .sub{font-family:"SF Mono","Menlo",monospace; font-size:12px; color:var(--paper-dim); margin-bottom:20px;}
+  .leech-box{
+    text-align:left; border:1px solid var(--bad-dim); background:#241713; border-radius:2px;
+    padding:14px 16px; margin-bottom:20px; font-family:"SF Mono","Menlo",monospace; font-size:11px;
+  }
+  .leech-box .title{color:var(--bad); text-transform:uppercase; letter-spacing:0.08em; font-size:10px; margin-bottom:8px;}
+  .leech-item{color:var(--paper-dim); padding:3px 0; border-bottom:1px solid var(--rule);}
+  .leech-item b{color:var(--card-face);}
+
+  footer{margin-top:40px; text-align:center; font-family:"SF Mono","Menlo",monospace; font-size:10px; color:var(--paper-dim);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">LA<span>C</span>UNA</div>
+    <div class="tagline">repetição espaçada + recall ativo</div>
+  </header>
+
+  <!-- SCREEN 1: import -->
+  <div class="screen active" id="screenImport">
+    <div class="howto">
+      1. No chat com a Claude, mande o PDF e peça pra gerar os dados de estudo<br>
+      2. Ela te devolve um arquivo <b>.json</b><br>
+      3. Importe esse arquivo aqui embaixo
+    </div>
+
+    <div class="panel">
+      <div class="field-label">Importar dados (.json)</div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".json" hidden>
+        <div class="dz-text">Arraste o arquivo .json aqui — ou <span class="dz-link" id="dzLink">escolha um arquivo</span></div>
+        <div class="dz-status" id="dzStatus"></div>
+      </div>
+      <div class="or-divider">ou cole o conteúdo</div>
+      <textarea id="jsonPaste" placeholder='{"title":"...", "cards":[{"front":"...␣␣␣␣␣...","answer":"...","options":["...","...","...","..."]}]}'></textarea>
+      <button class="btn btn-primary" id="loadJsonBtn">Carregar dados</button>
+    </div>
+
+    <div class="panel">
+      <div class="field-label">Buscar do GitHub</div>
+      <div class="drive-row">
+        <input type="text" id="githubUrl" placeholder="Cole o link do arquivo .json no GitHub">
+      </div>
+      <label class="remember-row">
+        <input type="checkbox" id="githubRemember" checked> lembrar neste navegador
+      </label>
+      <button class="btn btn-primary" id="githubFetchBtn">Buscar do GitHub</button>
+      <div class="dz-status" id="githubStatus"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: mode select -->
+  <div class="screen" id="screenMode">
+    <div class="deck-summary" id="deckSummary"></div>
+    <div class="method-note">
+      <b>Como isso funciona:</b> dentro da sessão, cada cartão que você erra ou acha difícil volta a aparecer mais cedo; o que você domina sai da fila. Entre um dia e outro, o progresso fica salvo neste navegador — cartões que você já sabe bem somem por mais tempo, os fracos voltam antes. Isso é recall ativo + repetição espaçada, as duas técnicas com mais evidência científica pra memorização de longo prazo.
+    </div>
+    <div class="mode-grid">
+      <button class="mode-card" data-mode="lacuna">
+        <div class="mode-name"><span>Lacuna</span></div>
+        <div class="mode-desc">Você digita a resposta de cabeça antes de ver — o modo com mais esforço de recall, o mais eficaz.</div>
+      </button>
+      <button class="mode-card" data-mode="verso">
+        <div class="mode-name"><span>Verso</span></div>
+        <div class="mode-desc">Cartão físico: pensa na resposta, vira pra conferir, e avalia o quanto lembrou.</div>
+      </button>
+      <button class="mode-card" data-mode="quiz">
+        <div class="mode-name"><span>Quiz</span></div>
+        <div class="mode-desc">Múltipla escolha. Mais rápido, mas é reconhecimento — bom pra aquecer, não pra fixar.</div>
+      </button>
+    </div>
+    <div class="nav-row" style="margin-top:20px;">
+      <button class="btn btn-ghost" id="newDataBtn">Trocar dados</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: study -->
+  <div class="screen" id="screenStudy">
+    <div class="deck-meta">
+      <span id="deckPos">restam 10</span>
+      <span class="score" id="deckScore">0 dominados / 10</span>
+    </div>
+    <div class="mastery-rail"><div class="mastery-fill" id="masteryFill"></div></div>
+
+    <div class="stage" id="stage">
+      <div class="stack-behind b2"></div>
+      <div class="stack-behind b1"></div>
+      <div class="card-flat" id="cardFlat" style="display:none;">
+        <div class="hole-row"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+        <div class="face-tag" id="flatTag">Complete a lacuna de cabeça <span class="leech-flag" id="leechFlagFlat" style="display:none;">revisando de novo</span></div>
+        <div class="face-text" id="flatFront"></div>
+      </div>
+      <div class="flip-outer" id="flipOuter" style="display:none;">
+        <div class="card3d" id="card3d">
+          <div class="face face-front">
+            <div class="hole-row"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+            <div class="face-tag">Frente <span class="leech-flag" id="leechFlagFront" style="display:none;">revisando de novo</span></div>
+            <div class="face-text" id="flipFront"></div>
+            <div class="tap-hint">toque para virar</div>
+          </div>
+          <div class="face face-back">
+            <div class="hole-row"><div class="hole"></div><div class="hole"></div><div class="hole"></div></div>
+            <div class="face-tag">Verso</div>
+            <div class="face-text" id="flipBack"></div>
+            <div class="tap-hint">toque para voltar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="recall-input-row" id="recallInputRow" style="display:none;">
+      <input type="text" id="recallInput" placeholder="Sua resposta..." autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="btn btn-primary" id="checkRecallBtn" style="margin:0; width:auto;">Verificar</button>
+    </div>
+    <div class="feedback-line" id="feedbackLine"></div>
+
+    <div class="options-grid" id="optionsGrid" style="display:none;"></div>
+
+    <div class="reveal-row" id="revealRow" style="display:none;">
+      <button class="btn btn-ghost" id="revealBtn">Não lembro — mostrar resposta</button>
+    </div>
+
+    <div class="rate-row" id="rateRow" style="display:none;">
+      <button class="btn rate-btn rate-again" id="rateAgainBtn">Errei</button>
+      <button class="btn rate-btn rate-hard" id="rateHardBtn">Difícil</button>
+      <button class="btn rate-btn rate-good" id="rateGoodBtn">Bom</button>
+      <button class="btn rate-btn rate-easy" id="rateEasyBtn">Fácil</button>
+    </div>
+
+    <div class="next-row" id="nextRow" style="display:none;">
+      <button class="btn btn-primary" id="nextBtn">Próxima →</button>
+    </div>
+
+    <div class="result-panel" id="resultPanel" style="display:none;">
+      <div class="big" id="resultBig">100%</div>
+      <div class="sub" id="resultSub">10 cartões dominados</div>
+      <div class="leech-box" id="leechBox" style="display:none;">
+        <div class="title">Continuaram difíceis — vale revisar de novo</div>
+        <div id="leechList"></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="restartBtn">↺ Refazer sessão</button>
+      <button class="btn btn-ghost" id="changeModeBtn">Trocar modo</button>
+    </div>
+  </div>
+
+  <footer>gerado no seu navegador · nada é enviado a servidor algum</footer>
+</div>
+
+<script>
+(function(){
+  const screenImport = document.getElementById('screenImport');
+  const screenMode = document.getElementById('screenMode');
+  const screenStudy = document.getElementById('screenStudy');
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const dzLink = document.getElementById('dzLink');
+  const dzStatus = document.getElementById('dzStatus');
+  const jsonPaste = document.getElementById('jsonPaste');
+  const loadJsonBtn = document.getElementById('loadJsonBtn');
+  const deckSummary = document.getElementById('deckSummary');
+  const newDataBtn = document.getElementById('newDataBtn');
+
+  const deckPos = document.getElementById('deckPos');
+  const deckScore = document.getElementById('deckScore');
+  const masteryFill = document.getElementById('masteryFill');
+  const stage = document.getElementById('stage');
+  const cardFlat = document.getElementById('cardFlat');
+  const flatTag = document.getElementById('flatTag');
+  const flatFront = document.getElementById('flatFront');
+  const leechFlagFlat = document.getElementById('leechFlagFlat');
+  const leechFlagFront = document.getElementById('leechFlagFront');
+  const flipOuter = document.getElementById('flipOuter');
+  const card3d = document.getElementById('card3d');
+  const flipFront = document.getElementById('flipFront');
+  const flipBack = document.getElementById('flipBack');
+  const recallInputRow = document.getElementById('recallInputRow');
+  const recallInput = document.getElementById('recallInput');
+  const checkRecallBtn = document.getElementById('checkRecallBtn');
+  const feedbackLine = document.getElementById('feedbackLine');
+  const optionsGrid = document.getElementById('optionsGrid');
+  const revealRow = document.getElementById('revealRow');
+  const revealBtn = document.getElementById('revealBtn');
+  const rateRow = document.getElementById('rateRow');
+  const rateAgainBtn = document.getElementById('rateAgainBtn');
+  const rateHardBtn = document.getElementById('rateHardBtn');
+  const rateGoodBtn = document.getElementById('rateGoodBtn');
+  const rateEasyBtn = document.getElementById('rateEasyBtn');
+  const nextRow = document.getElementById('nextRow');
+  const nextBtn = document.getElementById('nextBtn');
+  const resultPanel = document.getElementById('resultPanel');
+  const resultBig = document.getElementById('resultBig');
+  const resultSub = document.getElementById('resultSub');
+  const leechBox = document.getElementById('leechBox');
+  const leechList = document.getElementById('leechList');
+  const restartBtn = document.getElementById('restartBtn');
+  const changeModeBtn = document.getElementById('changeModeBtn');
+
+  // --- safe localStorage wrapper (degrades gracefully if unavailable) ---
+  function lsGet(key){
+    try{ return window.localStorage.getItem(key); } catch(e){ return null; }
+  }
+  function lsSet(key, val){
+    try{ window.localStorage.setItem(key, val); return true; } catch(e){ return false; }
+  }
+
+  function hashString(s){
+    let h = 2166136261;
+    for(let i = 0; i < s.length; i++){
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(16);
+  }
+
+  function deckId(d){
+    return hashString(d.title + '|' + d.cards.length + '|' + d.cards.map(c => c.answer).join(','));
+  }
+  function cardKey(c){
+    return hashString(c.front + '|' + c.answer);
+  }
+
+  function loadProgress(id){
+    const raw = lsGet('lacuna_progress_' + id);
+    if(!raw) return {};
+    try{ return JSON.parse(raw); } catch(e){ return {}; }
+  }
+  function saveProgress(id, data){
+    lsSet('lacuna_progress_' + id, JSON.stringify(data));
+  }
+  function todayStr(){
+    return new Date().toISOString().slice(0,10);
+  }
+  function addDays(dateStr, days){
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0,10);
+  }
+
+  let deck = null;       // { title, cards: [{front, answer, options?}] }
+  let progress = {};     // persisted SM-2 record per cardKey: {ease, interval, reps, due}
+  let mode = 'lacuna';
+  let queue = [];         // active items still in this session
+  let masteredCount = 0;
+  let totalCount = 0;
+  let current = null;
+  let awaitingRating = false;
+  let sessionLeeches = [];
+
+  function showScreen(el){
+    [screenImport, screenMode, screenStudy].forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setStatus(msg, kind){
+    dzStatus.textContent = msg || '';
+    dzStatus.className = 'dz-status' + (kind ? ' ' + kind : '');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function normalizeDeck(data){
+    if(!data || !Array.isArray(data.cards)) throw new Error('formato inválido: falta "cards"');
+    const cards = data.cards.map(c => {
+      if(!c.front || !c.answer) throw new Error('cada card precisa de "front" e "answer"');
+      return { front: c.front, answer: c.answer, options: Array.isArray(c.options) ? c.options : null };
+    }).filter(c => c.front.includes('␣␣␣␣␣') || c.front.trim() !== c.answer);
+    if(!cards.length) throw new Error('nenhum card válido encontrado');
+    return { title: data.title || 'Baralho', cards };
+  }
+
+  function loadDeckData(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      deck = normalizeDeck(parsed);
+      progress = loadProgress(deckId(deck));
+      setStatus(`Carregado: ${deck.cards.length} cartões`, 'ok');
+      deckSummary.textContent = `${deck.title} · ${deck.cards.length} cartões`;
+      showScreen(screenMode);
+    } catch(err){
+      setStatus('Erro ao ler os dados: ' + err.message, 'err');
+    }
+  }
+
+  // --- GitHub fetch (public repo files, no key needed) ---
+  const githubUrl = document.getElementById('githubUrl');
+  const githubRemember = document.getElementById('githubRemember');
+  const githubFetchBtn = document.getElementById('githubFetchBtn');
+  const githubStatus = document.getElementById('githubStatus');
+
+  (function restoreGithubField(){
+    const saved = lsGet('lacuna_github_url');
+    if(saved) githubUrl.value = saved;
+  })();
+
+  function toRawGithubUrl(url){
+    // converts a normal github.com blob link to the raw content link
+    const m = url.match(/^https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)$/);
+    if(m){
+      const [, user, repo, branch, path] = m;
+      return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+    }
+    return url; // already a raw url, or something else — try as-is
+  }
+
+  githubFetchBtn.addEventListener('click', async () => {
+    const rawInput = githubUrl.value.trim();
+    if(!rawInput){
+      githubStatus.textContent = 'Cole o link do arquivo.';
+      githubStatus.className = 'dz-status err';
+      return;
+    }
+    if(githubRemember.checked){
+      lsSet('lacuna_github_url', rawInput);
+    }
+    githubStatus.textContent = 'Buscando no GitHub...';
+    githubStatus.className = 'dz-status';
+    try{
+      const url = toRawGithubUrl(rawInput) + (rawInput.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
+      const res = await fetch(url);
+      if(!res.ok){
+        throw new Error(`HTTP ${res.status} — confira se o link aponta pro arquivo .json e se o repositório é público.`);
+      }
+      const text = await res.text();
+      githubStatus.textContent = 'Encontrado, carregando...';
+      githubStatus.className = 'dz-status ok';
+      loadDeckData(text);
+    } catch(err){
+      console.error(err);
+      githubStatus.textContent = 'Erro: ' + err.message;
+      githubStatus.className = 'dz-status err';
+    }
+  });
+
+  dzLink.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('click', (e) => { if(e.target === dropzone) fileInput.click(); });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+    file.text().then(loadDeckData).catch(err => setStatus('Erro ao ler arquivo: ' + err.message, 'err'));
+  });
+  ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if(!file) return;
+    file.text().then(loadDeckData).catch(err => setStatus('Erro ao ler arquivo: ' + err.message, 'err'));
+  });
+  loadJsonBtn.addEventListener('click', () => {
+    if(!jsonPaste.value.trim()){ setStatus('Cole os dados ou escolha um arquivo.', 'err'); return; }
+    loadDeckData(jsonPaste.value.trim());
+  });
+
+  newDataBtn.addEventListener('click', () => { deck = null; showScreen(screenImport); });
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  document.querySelectorAll('.mode-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mode = btn.dataset.mode;
+      showScreen(screenStudy);
+      startSession(true);
+    });
+  });
+
+  function getCardRecord(c){
+    const k = cardKey(c);
+    if(!progress[k]) progress[k] = { ease: 2.5, interval: 0, reps: 0, due: todayStr() };
+    return progress[k];
+  }
+
+  function updateLongTermSchedule(c, level){
+    const rec = getCardRecord(c);
+    const today = todayStr();
+    if(level === 'again'){
+      rec.reps = 0;
+      rec.interval = 0;
+      rec.ease = Math.max(1.3, rec.ease - 0.2);
+      rec.due = today;
+    } else if(level === 'hard'){
+      rec.interval = rec.reps === 0 ? 1 : Math.max(1, Math.round(rec.interval * 1.2));
+      rec.ease = Math.max(1.3, rec.ease - 0.15);
+      rec.reps++;
+      rec.due = addDays(today, rec.interval);
+    } else if(level === 'good'){
+      rec.interval = rec.reps === 0 ? 1 : (rec.reps === 1 ? 6 : Math.round(rec.interval * rec.ease));
+      rec.reps++;
+      rec.due = addDays(today, rec.interval);
+    } else if(level === 'easy'){
+      rec.interval = rec.reps === 0 ? 4 : Math.round(rec.interval * rec.ease * 1.3) || 4;
+      rec.ease = rec.ease + 0.15;
+      rec.reps++;
+      rec.due = addDays(today, rec.interval);
+    }
+    saveProgress(deckId(deck), progress);
+    return rec;
+  }
+
+  function startSession(onlyDue){
+    const today = todayStr();
+    let pool = deck.cards;
+    if(onlyDue){
+      pool = deck.cards.filter(c => {
+        const rec = progress[cardKey(c)];
+        return !rec || rec.due <= today;
+      });
+    }
+    totalCount = pool.length;
+    masteredCount = 0;
+    sessionLeeches = [];
+    queue = shuffle(pool.map((c, i) => ({
+      card: c, idx: i, consecutiveGood: 0, errCount: 0, seenCount: 0
+    })));
+    if(!queue.length){
+      showDueEmpty();
+      return;
+    }
+    nextCard();
+  }
+
+  function showDueEmpty(){
+    resetControls();
+    stage.style.display = 'none';
+    resultPanel.style.display = 'block';
+    resultBig.textContent = '✓';
+    resultSub.textContent = '';
+    leechBox.style.display = 'none';
+    const note = document.createElement('div');
+    note.className = 'due-note';
+    note.textContent = 'Nada pra revisar hoje — tudo em dia. Volte amanhã, ou estude tudo de novo mesmo assim.';
+    resultPanel.insertBefore(note, resultPanel.firstChild);
+    const forceBtn = document.createElement('button');
+    forceBtn.className = 'btn btn-ghost';
+    forceBtn.textContent = 'Estudar tudo mesmo assim';
+    forceBtn.style.marginTop = '10px';
+    forceBtn.addEventListener('click', () => { resultPanel.removeChild(note); resultPanel.removeChild(forceBtn); startSession(false); });
+    resultPanel.appendChild(forceBtn);
+  }
+
+  function updateMeta(){
+    deckPos.textContent = `restam ${queue.length}`;
+    deckScore.textContent = `${masteredCount} dominados / ${totalCount}`;
+    masteryFill.style.width = totalCount ? `${(masteredCount/totalCount)*100}%` : '0%';
+  }
+
+  function nextCard(){
+    resetControls();
+    updateMeta();
+    if(!queue.length){
+      showResult();
+      return;
+    }
+    current = queue[0];
+    current.seenCount++;
+    renderCurrent();
+  }
+
+  function resetControls(){
+    optionsGrid.style.display = 'none';
+    revealRow.style.display = 'none';
+    rateRow.style.display = 'none';
+    nextRow.style.display = 'none';
+    resultPanel.style.display = 'none';
+    cardFlat.style.display = 'none';
+    flipOuter.style.display = 'none';
+    recallInputRow.style.display = 'none';
+    feedbackLine.textContent = '';
+    feedbackLine.className = 'feedback-line';
+    leechFlagFlat.style.display = 'none';
+    leechFlagFront.style.display = 'none';
+    stage.style.display = 'block';
+    awaitingRating = false;
+  }
+
+  function renderCurrent(){
+    const c = current.card;
+    const isLeech = current.errCount >= 2;
+
+    if(mode === 'lacuna'){
+      cardFlat.style.display = 'flex';
+      flatTag.childNodes[0].textContent = 'Complete a lacuna de cabeça ';
+      leechFlagFlat.style.display = isLeech ? 'inline' : 'none';
+      flatFront.innerHTML = escapeHtml(c.front).replace('␣␣␣␣␣', '<span class="blank"></span>');
+      recallInputRow.style.display = 'flex';
+      recallInput.value = '';
+      recallInput.disabled = false;
+      setTimeout(() => recallInput.focus(), 50);
+      revealRow.style.display = 'flex';
+    }
+
+    if(mode === 'verso'){
+      flipOuter.style.display = 'block';
+      leechFlagFront.style.display = isLeech ? 'inline' : 'none';
+      card3d.classList.remove('flipped');
+      const frontHasBlank = c.front.includes('␣␣␣␣␣');
+      flipFront.innerHTML = frontHasBlank
+        ? escapeHtml(c.front).replace('␣␣␣␣␣', '<span class="blank"></span>')
+        : escapeHtml(c.front);
+      const fullSentence = frontHasBlank ? c.front.replace('␣␣␣␣␣', c.answer) : c.answer;
+      flipBack.innerHTML = escapeHtml(fullSentence).replace(
+        escapeHtml(c.answer), '<span class="answer-word">' + escapeHtml(c.answer) + '</span>'
+      );
+      let hasFlipped = false;
+      card3d.onclick = () => {
+        card3d.classList.toggle('flipped');
+        if(card3d.classList.contains('flipped') && !hasFlipped){
+          hasFlipped = true;
+          rateRow.style.display = 'grid';
+          awaitingRating = true;
+        }
+      };
+    }
+
+    if(mode === 'quiz'){
+      cardFlat.style.display = 'flex';
+      flatTag.childNodes[0].textContent = 'Qual palavra completa a frase? ';
+      leechFlagFlat.style.display = isLeech ? 'inline' : 'none';
+      flatFront.innerHTML = escapeHtml(c.front).replace('␣␣␣␣␣', '<span class="blank"></span>');
+      optionsGrid.style.display = 'grid';
+      optionsGrid.innerHTML = '';
+      const opts = c.options && c.options.length >= 2 ? shuffle(c.options) : shuffle([c.answer]);
+      opts.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.textContent = opt;
+        b.addEventListener('click', () => selectOption(b, opt, c.answer));
+        optionsGrid.appendChild(b);
+      });
+    }
+  }
+
+  function normalizeAnswer(s){
+    return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function revealLacuna(){
+    const c = current.card;
+    flatFront.innerHTML = escapeHtml(c.front.replace('␣␣␣␣␣', c.answer)).replace(
+      escapeHtml(c.answer), '<span class="answer-word">' + escapeHtml(c.answer) + '</span>'
+    );
+    recallInput.disabled = true;
+    revealRow.style.display = 'none';
+    rateRow.style.display = 'grid';
+    awaitingRating = true;
+  }
+
+  checkRecallBtn.addEventListener('click', () => {
+    const typed = recallInput.value;
+    if(!typed.trim()) return;
+    const correct = normalizeAnswer(typed) === normalizeAnswer(current.card.answer);
+    feedbackLine.textContent = correct ? 'Bateu!' : `Resposta esperada: ${current.card.answer}`;
+    feedbackLine.className = 'feedback-line ' + (correct ? 'ok' : 'bad');
+    revealLacuna();
+  });
+  recallInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') checkRecallBtn.click(); });
+  revealBtn.addEventListener('click', revealLacuna);
+
+  function selectOption(btn, chosen, correctAnswer){
+    if(awaitingRating) return;
+    awaitingRating = true;
+    const isCorrect = chosen.toLowerCase() === correctAnswer.toLowerCase();
+    if(isCorrect) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    [...optionsGrid.children].forEach(b => {
+      b.disabled = true;
+      if(b.textContent.toLowerCase() === correctAnswer.toLowerCase()) b.classList.add('correct');
+    });
+    // quiz grades itself: correct behaves like "Bom", wrong like "Errei"
+    setTimeout(() => grade(isCorrect ? 'good' : 'again'), 500);
+  }
+
+  function grade(level){
+    const item = queue.shift();
+    updateLongTermSchedule(item.card, level);
+    if(level === 'again'){
+      item.errCount++;
+      item.consecutiveGood = 0;
+      const insertAt = Math.min(2, queue.length);
+      queue.splice(insertAt, 0, item);
+    } else if(level === 'hard'){
+      item.consecutiveGood = 0;
+      const insertAt = Math.min(4, queue.length);
+      queue.splice(insertAt, 0, item);
+    } else if(level === 'good'){
+      item.consecutiveGood++;
+      if(item.consecutiveGood >= 2){
+        masteredCount++;
+        if(item.errCount >= 2) sessionLeeches.push(item);
+      } else {
+        const insertAt = Math.min(7, queue.length);
+        queue.splice(insertAt, 0, item);
+      }
+    } else if(level === 'easy'){
+      masteredCount++;
+      if(item.errCount >= 2) sessionLeeches.push(item);
+    }
+    updateMeta();
+    nextRow.style.display = 'flex';
+    nextBtn.textContent = queue.length ? 'Próxima →' : 'Ver resultado →';
+    rateRow.style.display = 'none';
+    revealRow.style.display = 'none';
+    recallInputRow.style.display = 'none';
+  }
+
+  rateAgainBtn.addEventListener('click', () => grade('again'));
+  rateHardBtn.addEventListener('click', () => grade('hard'));
+  rateGoodBtn.addEventListener('click', () => grade('good'));
+  rateEasyBtn.addEventListener('click', () => grade('easy'));
+
+  nextBtn.addEventListener('click', nextCard);
+
+  function showResult(){
+    resetControls();
+    resultPanel.style.display = 'block';
+    stage.style.display = 'none';
+    resultBig.textContent = totalCount ? Math.round((masteredCount/totalCount)*100) + '%' : '0%';
+    resultSub.textContent = `${masteredCount} de ${totalCount} cartões dominados nesta sessão`;
+
+    if(sessionLeeches.length){
+      leechBox.style.display = 'block';
+      leechList.innerHTML = '';
+      sessionLeeches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'leech-item';
+        const sentence = item.card.front.includes('␣␣␣␣␣')
+          ? item.card.front.replace('␣␣␣␣␣', item.card.answer)
+          : item.card.answer;
+        div.innerHTML = `<b>${escapeHtml(item.card.answer)}</b> — ${escapeHtml(sentence)}`;
+        leechList.appendChild(div);
+      });
+    } else {
+      leechBox.style.display = 'none';
+    }
+  }
+
+  restartBtn.addEventListener('click', () => startSession(false));
+  changeModeBtn.addEventListener('click', () => showScreen(screenMode));
+})();
+</script>
+</body>
+</html>
